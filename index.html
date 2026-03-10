@@ -4,34 +4,107 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Infografía: Análisis del Caso Jaque</title>
-    <!-- Tailwind CSS para estilos rápidos y modernos -->
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons para la iconografía -->
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- html2canvas (para captura en HD) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- jsPDF (para generación del PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
     <style>
         body { font-family: 'Inter', sans-serif; }
         .bg-pattern {
             background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
         }
+        
+        /* Estilos visuales para el modo edición */
+        .edit-mode .editable-text {
+            outline: 2px dashed #3b82f6;
+            outline-offset: 2px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            cursor: text;
+        }
+        .edit-mode .editable-text:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .edit-mode .editable-img, .edit-mode .editable-icon {
+            outline: 3px dashed #10b981;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .edit-mode .editable-img:hover, .edit-mode .editable-icon:hover {
+            transform: scale(1.05);
+            opacity: 0.8;
+        }
+        
+        /* Ocultar elementos UI al exportar */
+        .exporting .no-export {
+            display: none !important;
+        }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 antialiased p-4 md:p-8">
+<body class="bg-gray-100 text-gray-800 antialiased p-4 md:p-8 relative">
 
-    <!-- Contenedor Principal de la Infografía -->
-    <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden border border-gray-200">
+    <!-- CONTROLES FLOTANTES (No se exportan) -->
+    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 no-export">
+        <div class="flex gap-2 justify-end">
+            <button id="btn-edit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg font-bold flex items-center gap-2 transition-colors">
+                <i data-lucide="edit-3" class="w-5 h-5"></i> <span id="text-edit">Editar</span>
+            </button>
+            <button id="btn-export" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-lg font-bold flex items-center gap-2 transition-colors">
+                <i data-lucide="download" class="w-5 h-5"></i> Exportar PDF 4K
+            </button>
+        </div>
+        
+        <!-- Panel de edición (Oculto por defecto) -->
+        <div id="edit-panel" class="hidden bg-white p-4 rounded-xl shadow-xl border border-gray-200 mt-2 w-72">
+            <h4 class="font-bold text-gray-800 border-b pb-2 mb-3">Herramientas de Edición</h4>
+            <p class="text-xs text-gray-500 mb-4">Haz clic en textos, imágenes o íconos en la infografía para modificarlos.</p>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Color de Encabezado (Inicio)</label>
+                    <input type="color" id="color-header-start" value="#b91c1c" class="w-full h-8 cursor-pointer rounded">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Color de Encabezado (Fin)</label>
+                    <input type="color" id="color-header-end" value="#111827" class="w-full h-8 cursor-pointer rounded">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Color Fondo Secundario</label>
+                    <input type="color" id="color-bg-secondary" value="#eff6ff" class="w-full h-8 cursor-pointer rounded">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicador de carga para el PDF -->
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900/80 z-[100] hidden flex-col items-center justify-center text-white no-export">
+        <i data-lucide="loader" class="w-12 h-12 animate-spin mb-4 text-red-500"></i>
+        <h2 class="text-2xl font-bold">Generando PDF en Alta Calidad...</h2>
+        <p class="text-gray-300 mt-2">Esto puede tomar unos segundos.</p>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL DE LA INFOGRAFÍA -->
+    <div id="infografia-container" class="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden border border-gray-200 relative">
         
         <!-- ENCABEZADO -->
-        <header class="bg-gradient-to-br from-red-700 to-gray-900 text-white p-8 md:p-12 relative bg-pattern">
+        <header id="main-header" class="text-white p-8 md:p-12 relative bg-pattern" style="background: linear-gradient(to bottom right, var(--tw-gradient-stops)); --tw-gradient-from: #b91c1c; --tw-gradient-to: #111827; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);">
             <div class="relative z-10 flex flex-col md:flex-row items-center justify-center md:justify-start gap-6">
                 <div class="bg-white/20 p-4 rounded-full backdrop-blur-sm flex-shrink-0">
-                    <i data-lucide="alert-octagon" class="w-16 h-16 text-white"></i>
+                    <i data-lucide="alert-octagon" class="w-16 h-16 text-white editable-icon" data-icon-name="alert-octagon"></i>
                 </div>
                 <div class="text-center md:text-left">
-                    <span class="uppercase tracking-widest text-red-200 font-bold text-sm mb-2 block">Análisis Ético</span>
-                    <h1 class="text-4xl md:text-5xl font-extrabold leading-tight mb-2">EL CASO JAQUE</h1>
-                    <p class="text-lg md:text-xl font-light text-gray-200">Corrupción en la Agencia Nacional de Tránsito (ANT)</p>
+                    <span class="editable-text uppercase tracking-widest text-white/80 font-bold text-sm mb-2 block">Análisis Ético</span>
+                    <h1 class="editable-text text-4xl md:text-5xl font-extrabold leading-tight mb-2">EL CASO JAQUE</h1>
+                    <p class="editable-text text-lg md:text-xl font-light text-gray-200">Corrupción en la Agencia Nacional de Tránsito (ANT)</p>
                 </div>
             </div>
         </header>
@@ -39,10 +112,11 @@
         <!-- DESCRIPCIÓN DEL CASO -->
         <section class="p-6 md:p-8 border-b border-gray-100 bg-gray-50">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <i data-lucide="file-search" class="text-red-600"></i> ¿Qué pasó?
+                <i data-lucide="file-search" class="text-red-600 editable-icon" data-icon-name="file-search"></i> 
+                <span class="editable-text">¿Qué pasó?</span>
             </h2>
-            <p class="text-base md:text-lg text-gray-600 leading-relaxed">
-                Una red de corrupción operó dentro de la ANT, donde el ciudadano dejó de ser la prioridad para convertirse en una <strong>fuente de dinero fácil</strong>. El Estado, en lugar de servir por igual, se puso al servicio de quienes pagan sobornos o de grupos peligrosos, eliminando infracciones y entregando documentos ilegalmente.
+            <p class="editable-text text-base md:text-lg text-gray-600 leading-relaxed">
+                Una red de corrupción operó dentro de la ANT, donde el ciudadano dejó de ser la prioridad para convertirse en una fuente de dinero fácil. El Estado, en lugar de servir por igual, se puso al servicio de quienes pagan sobornos o de grupos peligrosos, eliminando infracciones y entregando documentos ilegalmente.
             </p>
         </section>
 
@@ -52,21 +126,21 @@
             <!-- VULNERACIÓN DE LA DIGNIDAD -->
             <div class="p-6 md:p-8 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col items-center md:items-start text-center md:text-left">
                 <div class="bg-red-50 text-red-600 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
-                    <i data-lucide="user-x" class="w-6 h-6"></i>
+                    <i data-lucide="user-x" class="w-6 h-6 editable-icon" data-icon-name="user-x"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-4">Vulneración de la Dignidad</h3>
-                <ul class="space-y-4 text-gray-600 text-left">
+                <h3 class="editable-text text-xl font-bold mb-4">Vulneración de la Dignidad</h3>
+                <ul class="space-y-4 text-gray-600 text-left w-full">
                     <li class="flex items-start gap-3">
-                        <i data-lucide="x-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"></i>
-                        <span>Trato injusto al ciudadano común en oficinas públicas.</span>
+                        <i data-lucide="x-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5 editable-icon" data-icon-name="x-circle"></i>
+                        <span class="editable-text">Trato injusto al ciudadano común en oficinas públicas.</span>
                     </li>
                     <li class="flex items-start gap-3">
-                        <i data-lucide="x-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"></i>
-                        <span>El esfuerzo honesto no vale nada frente al pago de sobornos.</span>
+                        <i data-lucide="x-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5 editable-icon" data-icon-name="x-circle"></i>
+                        <span class="editable-text">El esfuerzo honesto no vale nada frente al pago de sobornos.</span>
                     </li>
                     <li class="flex items-start gap-3">
-                        <i data-lucide="x-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"></i>
-                        <span>Se obliga a las personas a aceptar un sistema corrupto para obtener un derecho.</span>
+                        <i data-lucide="x-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5 editable-icon" data-icon-name="x-circle"></i>
+                        <span class="editable-text">Se obliga a las personas a aceptar un sistema corrupto para obtener un derecho.</span>
                     </li>
                 </ul>
             </div>
@@ -74,21 +148,23 @@
             <!-- PRINCIPIOS AFECTADOS -->
             <div class="p-6 md:p-8 flex flex-col items-center md:items-start text-center md:text-left">
                 <div class="bg-blue-50 text-blue-600 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
-                    <i data-lucide="scale" class="w-6 h-6"></i>
+                    <i data-lucide="scale" class="w-6 h-6 editable-icon" data-icon-name="scale"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-4">Principios y Derechos Afectados</h3>
+                <h3 class="editable-text text-xl font-bold mb-4">Principios y Derechos Afectados</h3>
                 <div class="space-y-4 w-full">
                     <div class="bg-white border border-gray-200 p-5 rounded-xl shadow-sm text-left">
                         <h4 class="font-bold text-gray-800 flex items-center gap-2 mb-2">
-                            <i data-lucide="shield-off" class="w-5 h-5 text-blue-500"></i> Libertad y Derechos
+                            <i data-lucide="shield-off" class="w-5 h-5 text-blue-500 editable-icon" data-icon-name="shield-off"></i> 
+                            <span class="editable-text">Libertad y Derechos</span>
                         </h4>
-                        <p class="text-sm text-gray-600">Se viola el <strong>derecho a la igualdad</strong> y a un <strong>entorno seguro</strong> al permitir conductores peligrosos en las calles.</p>
+                        <p class="editable-text text-sm text-gray-600">Se viola el derecho a la igualdad y a un entorno seguro al permitir conductores peligrosos en las calles.</p>
                     </div>
                     <div class="bg-white border border-gray-200 p-5 rounded-xl shadow-sm text-left">
                         <h4 class="font-bold text-gray-800 flex items-center gap-2 mb-2">
-                            <i data-lucide="users" class="w-5 h-5 text-blue-500"></i> Responsabilidad Ética
+                            <i data-lucide="users" class="w-5 h-5 text-blue-500 editable-icon" data-icon-name="users"></i> 
+                            <span class="editable-text">Responsabilidad Ética</span>
                         </h4>
-                        <p class="text-sm text-gray-600">Ausencia total de ética desde altas autoridades, técnicos informáticos y ciudadanos que pagan sobornos.</p>
+                        <p class="editable-text text-sm text-gray-600">Ausencia total de ética desde altas autoridades, técnicos informáticos y ciudadanos que pagan sobornos.</p>
                     </div>
                 </div>
             </div>
@@ -97,58 +173,59 @@
         <!-- IMPACTO SOCIAL -->
         <section class="p-6 md:p-8 bg-gray-800 text-white text-center">
             <h2 class="text-xl md:text-2xl font-bold mb-8 text-gray-100 flex items-center justify-center gap-2">
-                <i data-lucide="trending-down" class="text-red-400"></i> Impacto en la Sociedad
+                <i data-lucide="trending-down" class="text-red-400 editable-icon" data-icon-name="trending-down"></i> 
+                <span class="editable-text">Impacto en la Sociedad</span>
             </h2>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 md:gap-6">
                 <div class="flex flex-col items-center">
                     <div class="bg-gray-700/50 p-4 rounded-full mb-3">
-                        <i data-lucide="heart-crack" class="w-8 h-8 text-red-400"></i>
+                        <i data-lucide="heart-crack" class="w-8 h-8 text-red-400 editable-icon" data-icon-name="heart-crack"></i>
                     </div>
-                    <p class="font-semibold text-lg mb-1">Desconfianza</p>
-                    <p class="text-sm text-gray-400 text-center px-2">Decepción total hacia las instituciones del Estado.</p>
+                    <p class="editable-text font-semibold text-lg mb-1">Desconfianza</p>
+                    <p class="editable-text text-sm text-gray-400 text-center px-2">Decepción total hacia las instituciones del Estado.</p>
                 </div>
                 <div class="flex flex-col items-center">
                     <div class="bg-gray-700/50 p-4 rounded-full mb-3">
-                        <i data-lucide="car-front" class="w-8 h-8 text-yellow-400"></i>
+                        <i data-lucide="car-front" class="w-8 h-8 text-yellow-400 editable-icon" data-icon-name="car-front"></i>
                     </div>
-                    <p class="font-semibold text-lg mb-1">Peligro en las Calles</p>
-                    <p class="text-sm text-gray-400 text-center px-2">Miedo a sufrir accidentes por conductores no aptos.</p>
+                    <p class="editable-text font-semibold text-lg mb-1">Peligro en las Calles</p>
+                    <p class="editable-text text-sm text-gray-400 text-center px-2">Miedo a sufrir accidentes por conductores no aptos.</p>
                 </div>
                 <div class="flex flex-col items-center">
                     <div class="bg-gray-700/50 p-4 rounded-full mb-3">
-                        <i data-lucide="frown" class="w-8 h-8 text-blue-400"></i>
+                        <i data-lucide="frown" class="w-8 h-8 text-blue-400 editable-icon" data-icon-name="frown"></i>
                     </div>
-                    <p class="font-semibold text-lg mb-1">Impunidad</p>
-                    <p class="text-sm text-gray-400 text-center px-2">Sensación de que la ley no sirve y solo los corruptos ganan.</p>
+                    <p class="editable-text font-semibold text-lg mb-1">Impunidad</p>
+                    <p class="editable-text text-sm text-gray-400 text-center px-2">Sensación de que la ley no sirve y solo los corruptos ganan.</p>
                 </div>
             </div>
         </section>
 
         <!-- MINI CAMPAÑA (SOLUCIÓN) -->
-        <section class="p-6 md:p-12 bg-blue-50">
+        <section id="campaign-section" class="p-6 md:p-12 transition-colors duration-300" style="background-color: #eff6ff;">
             <div class="text-center mb-8 md:mb-10">
-                <span class="bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider inline-block mb-4 shadow-md">Propuesta de Intervención</span>
-                <h2 class="text-3xl md:text-4xl font-black text-gray-900 mb-4 tracking-tight">VÍA TRANSPARENTE</h2>
-                <p class="text-lg md:text-xl text-blue-700 italic font-semibold font-serif px-4">"Tu seguridad no se negocia, tu dignidad no se compra"</p>
+                <span class="editable-text bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider inline-block mb-4 shadow-md">Propuesta de Intervención</span>
+                <h2 class="editable-text text-3xl md:text-4xl font-black text-gray-900 mb-4 tracking-tight">VÍA TRANSPARENTE</h2>
+                <p class="editable-text text-lg md:text-xl text-blue-700 italic font-semibold font-serif px-4">"Tu seguridad no se negocia, tu dignidad no se compra"</p>
             </div>
 
             <div class="flex flex-col md:flex-row gap-6 md:gap-8 items-center mb-10">
                 <div class="w-full md:w-1/3 rounded-2xl overflow-hidden shadow-lg border-4 border-white">
                     <!-- Imagen representativa -->
-                    <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Transparencia y Legalidad" class="w-full h-56 md:h-64 object-cover">
+                    <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Transparencia" class="editable-img w-full h-56 md:h-64 object-cover">
                 </div>
                 <div class="w-full md:w-2/3">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-100 h-full flex flex-col justify-center">
-                        <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Público Objetivo</h4>
-                        <p class="text-gray-800 font-medium text-base md:text-lg flex items-start md:items-center gap-3">
-                            <i data-lucide="target" class="text-blue-500 mt-1 md:mt-0 flex-shrink-0"></i> 
-                            <span>Funcionarios de la ANT, choferes profesionales y ciudadanía en general.</span>
+                        <h4 class="editable-text text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Público Objetivo</h4>
+                        <p class="font-medium text-base md:text-lg flex items-start md:items-center gap-3">
+                            <i data-lucide="target" class="text-blue-500 mt-1 md:mt-0 flex-shrink-0 editable-icon" data-icon-name="target"></i> 
+                            <span class="editable-text text-gray-800">Funcionarios de la ANT, choferes profesionales y ciudadanía en general.</span>
                         </p>
                     </div>
                 </div>
             </div>
 
-            <h3 class="text-xl font-bold text-center mb-8 text-gray-800 px-4">Acciones concretas desde las profesiones:</h3>
+            <h3 class="editable-text text-xl font-bold text-center mb-8 text-gray-800 px-4">Acciones concretas desde las profesiones:</h3>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 <!-- Acción 1: Computación -->
@@ -157,10 +234,10 @@
                         <i data-lucide="monitor" class="w-24 h-24"></i>
                     </div>
                     <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-                        <i data-lucide="terminal" class="text-indigo-600 w-6 h-6"></i>
+                        <i data-lucide="terminal" class="text-indigo-600 w-6 h-6 editable-icon" data-icon-name="terminal"></i>
                     </div>
-                    <h4 class="font-bold text-gray-900 text-lg mb-3">Computación</h4>
-                    <p class="text-sm text-gray-600 leading-relaxed">Crear sistemas inmutables que no permitan cambios manuales sin rastro. Implementar <strong>biometría (huellas)</strong> y alarmas automáticas ante movimientos sospechosos.</p>
+                    <h4 class="editable-text font-bold text-gray-900 text-lg mb-3">Computación</h4>
+                    <p class="editable-text text-sm text-gray-600 leading-relaxed">Crear sistemas inmutables que no permitan cambios manuales sin rastro. Implementar biometría (huellas) y alarmas automáticas ante movimientos sospechosos.</p>
                 </div>
 
                 <!-- Acción 2: Administración -->
@@ -169,10 +246,10 @@
                         <i data-lucide="briefcase" class="w-24 h-24"></i>
                     </div>
                     <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-                        <i data-lucide="pie-chart" class="text-emerald-600 w-6 h-6"></i>
+                        <i data-lucide="pie-chart" class="text-emerald-600 w-6 h-6 editable-icon" data-icon-name="pie-chart"></i>
                     </div>
-                    <h4 class="font-bold text-gray-900 text-lg mb-3">Admin. de Empresas</h4>
-                    <p class="text-sm text-gray-600 leading-relaxed">Aplicar <strong>controles estrictos y auditorías sorpresa</strong> al personal. Asegurar procesos internos limpios para evitar que el cargo se use para "negocios bajo la mesa".</p>
+                    <h4 class="editable-text font-bold text-gray-900 text-lg mb-3">Admin. de Empresas</h4>
+                    <p class="editable-text text-sm text-gray-600 leading-relaxed">Aplicar controles estrictos y auditorías sorpresa al personal. Asegurar procesos internos limpios para evitar que el cargo se use para "negocios bajo la mesa".</p>
                 </div>
 
                 <!-- Acción 3: Comercio Exterior -->
@@ -181,24 +258,167 @@
                         <i data-lucide="globe" class="w-24 h-24"></i>
                     </div>
                     <div class="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center mb-4">
-                        <i data-lucide="ship" class="text-cyan-600 w-6 h-6"></i>
+                        <i data-lucide="ship" class="text-cyan-600 w-6 h-6 editable-icon" data-icon-name="ship"></i>
                     </div>
-                    <h4 class="font-bold text-gray-900 text-lg mb-3">Comercio Exterior</h4>
-                    <p class="text-sm text-gray-600 leading-relaxed">Exigir trazabilidad. Que la información de transporte sea <strong>transparente y verificable</strong> para que solo choferes y empresas honestas muevan carga en fronteras.</p>
+                    <h4 class="editable-text font-bold text-gray-900 text-lg mb-3">Comercio Exterior</h4>
+                    <p class="editable-text text-sm text-gray-600 leading-relaxed">Exigir trazabilidad. Que la información de transporte sea transparente y verificable para que solo choferes y empresas honestas muevan carga en fronteras.</p>
                 </div>
             </div>
         </section>
         
         <!-- FOOTER -->
         <footer class="bg-gray-900 text-gray-500 text-center py-6 text-sm">
-            <p>Trabajo de Análisis Ético Profesional</p>
+            <p class="editable-text">Trabajo de Análisis Ético Profesional</p>
         </footer>
 
     </div>
 
-    <!-- Inicializar íconos de Lucide -->
     <script>
+        // Inicializar íconos de Lucide
         lucide.createIcons();
+
+        // ------------------ LÓGICA DE EDICIÓN ------------------
+        let isEditMode = false;
+        const btnEdit = document.getElementById('btn-edit');
+        const textEdit = document.getElementById('text-edit');
+        const editPanel = document.getElementById('edit-panel');
+        const body = document.body;
+
+        // Elementos interactivos
+        const editableTexts = document.querySelectorAll('.editable-text');
+        const editableImgs = document.querySelectorAll('.editable-img');
+        const editableIcons = document.querySelectorAll('.editable-icon');
+        
+        // Elementos de color
+        const colorHeaderStart = document.getElementById('color-header-start');
+        const colorHeaderEnd = document.getElementById('color-header-end');
+        const mainHeader = document.getElementById('main-header');
+        const colorBgSecondary = document.getElementById('color-bg-secondary');
+        const campaignSection = document.getElementById('campaign-section');
+
+        // Toggle Modo Edición
+        btnEdit.addEventListener('click', () => {
+            isEditMode = !isEditMode;
+            
+            if (isEditMode) {
+                body.classList.add('edit-mode');
+                textEdit.innerText = 'Guardar Cambios';
+                btnEdit.classList.replace('bg-blue-600', 'bg-green-600');
+                btnEdit.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
+                editPanel.classList.remove('hidden');
+                btnEdit.innerHTML = `<i data-lucide="save" class="w-5 h-5"></i> <span id="text-edit">Guardar Cambios</span>`;
+                
+                // Activar edición de texto
+                editableTexts.forEach(el => el.setAttribute('contenteditable', 'true'));
+            } else {
+                body.classList.remove('edit-mode');
+                editPanel.classList.add('hidden');
+                btnEdit.classList.replace('bg-green-600', 'bg-blue-600');
+                btnEdit.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
+                btnEdit.innerHTML = `<i data-lucide="edit-3" class="w-5 h-5"></i> <span id="text-edit">Editar</span>`;
+                
+                // Desactivar edición de texto
+                editableTexts.forEach(el => el.setAttribute('contenteditable', 'false'));
+            }
+            lucide.createIcons(); // Refrescar ícono del botón
+        });
+
+        // Cambiar imágenes
+        editableImgs.forEach(img => {
+            img.addEventListener('click', () => {
+                if (!isEditMode) return;
+                const newUrl = prompt('Ingresa la nueva URL de la imagen:', img.src);
+                if (newUrl && newUrl.trim() !== '') {
+                    img.src = newUrl;
+                }
+            });
+        });
+
+        // Cambiar íconos
+        editableIcons.forEach(icon => {
+            icon.addEventListener('click', function() {
+                if (!isEditMode) return;
+                const currentIcon = this.getAttribute('data-icon-name');
+                const newIcon = prompt('Ingresa el nombre del ícono de Lucide (ej: star, heart, user):', currentIcon);
+                
+                if (newIcon && newIcon.trim() !== '') {
+                    // Actualizar atributos para Lucide
+                    this.setAttribute('data-lucide', newIcon);
+                    this.setAttribute('data-icon-name', newIcon);
+                    // Renderizar nuevamente los íconos
+                    lucide.createIcons();
+                }
+            });
+        });
+
+        // Cambiar Colores (Eventos de Inputs)
+        colorHeaderStart.addEventListener('input', updateHeaderGradient);
+        colorHeaderEnd.addEventListener('input', updateHeaderGradient);
+        
+        function updateHeaderGradient() {
+            mainHeader.style.setProperty('--tw-gradient-from', colorHeaderStart.value);
+            mainHeader.style.setProperty('--tw-gradient-to', colorHeaderEnd.value);
+        }
+
+        colorBgSecondary.addEventListener('input', (e) => {
+            campaignSection.style.backgroundColor = e.target.value;
+        });
+
+
+        // ------------------ LÓGICA DE EXPORTACIÓN PDF (4K / Sin Cortes) ------------------
+        const btnExport = document.getElementById('btn-export');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const infografiaContainer = document.getElementById('infografia-container');
+
+        btnExport.addEventListener('click', async () => {
+            // 1. Mostrar pantalla de carga y ocultar botones
+            body.classList.add('exporting');
+            loadingOverlay.classList.remove('hidden');
+            loadingOverlay.classList.add('flex');
+            
+            // Si está en modo edición, desactivarlo para exportar limpio
+            if (isEditMode) btnEdit.click();
+
+            // Dar un pequeño tiempo para que el DOM se actualice
+            setTimeout(async () => {
+                try {
+                    // 2. Tomar captura en alta definición (Scale 3 = HD/4K dependiendo de la pantalla base)
+                    const canvas = await html2canvas(infografiaContainer, {
+                        scale: 3, 
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff'
+                    });
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+                    // 3. Crear el PDF con tamaño personalizado basado exactamente en el canvas
+                    // 'p' = retrato, 'px' = pixeles, [ancho, alto]
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF({
+                        orientation: 'p',
+                        unit: 'px',
+                        format: [canvas.width, canvas.height]
+                    });
+
+                    // Añadir la imagen cubriendo todo el PDF (0,0 hasta ancho,alto)
+                    pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+
+                    // 4. Descargar el archivo
+                    pdf.save('Infografia_Caso_Jaque_HD.pdf');
+
+                } catch (error) {
+                    console.error("Error al generar PDF:", error);
+                    alert("Ocurrió un error al generar el PDF. Verifica la consola para más detalles.");
+                } finally {
+                    // 5. Restaurar UI
+                    body.classList.remove('exporting');
+                    loadingOverlay.classList.add('hidden');
+                    loadingOverlay.classList.remove('flex');
+                }
+            }, 500); // Pequeño retraso para render de UI
+        });
+
     </script>
 </body>
 </html>
