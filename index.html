@@ -99,25 +99,28 @@
         <header id="main-header" class="text-white p-8 md:p-12 relative bg-pattern" style="background: linear-gradient(to bottom right, var(--tw-gradient-stops)); --tw-gradient-from: #b91c1c; --tw-gradient-to: #111827; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);">
             <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 w-full">
                 
-                <!-- Ícono Izquierda (Ahora es un círculo perfecto que coincide con la derecha) -->
-                <div class="w-20 h-20 md:w-28 md:h-28 bg-white/10 rounded-full backdrop-blur-md flex items-center justify-center flex-shrink-0 border border-white/20 shadow-inner">
+                <!-- Ícono Izquierda -->
+                <div class="w-20 h-20 md:w-28 md:h-28 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 border border-white/20 shadow-inner">
                     <i data-lucide="alert-octagon" class="w-10 h-10 md:w-14 md:h-14 text-white/90 editable-icon" data-icon-name="alert-octagon"></i>
                 </div>
                 
                 <!-- Texto Central -->
-                <div class="text-center flex-1 px-2 md:px-4">
-                    <span class="editable-text uppercase tracking-widest text-white/90 font-bold text-xs md:text-sm mb-2 block">UNIVERSIDAD POLITÉCNICA ESTATAL DEL CARCHI</span>
-                    <h1 class="editable-text text-4xl md:text-5xl font-extrabold leading-tight mb-2">EL CASO JAQUE</h1>
-                    <p class="editable-text text-lg md:text-xl font-light text-gray-200">Corrupción en la Agencia Nacional de Tránsito (ANT)</p>
+                <div class="text-center flex-1 px-2 md:px-4 flex flex-col items-center">
+                    <span class="editable-text uppercase tracking-widest text-white/90 font-bold text-xs md:text-sm mb-2 block w-full">UNIVERSIDAD POLITÉCNICA ESTATAL DEL CARCHI</span>
+                    <h1 class="editable-text text-4xl md:text-5xl font-extrabold leading-tight mb-2 w-full">EL CASO JAQUE</h1>
+                    <p class="editable-text text-lg md:text-xl font-light text-gray-200 w-full">Corrupción en la Agencia Nacional de Tránsito (ANT)</p>
                     
-                    <div class="mt-5 inline-block bg-black/30 py-2 px-5 rounded-xl backdrop-blur-sm border border-white/10 shadow-inner">
-                        <p class="editable-text text-sm md:text-base font-medium text-white/90">
-                            <strong>Integrantes:</strong> Oscar Ger, Milton Fuel, Erik Yuquilema, Sebastian Paucar, Joyce Valencia, Diana Villa.
-                        </p>
+                    <!-- Contenedor Integrantes Corregido -->
+                    <div class="mt-5 w-full flex justify-center">
+                        <div class="bg-black/40 py-2.5 px-6 rounded-xl border border-white/10 shadow-lg text-center max-w-lg">
+                            <p class="editable-text text-sm md:text-base font-medium text-white/95 leading-relaxed">
+                                <strong>Integrantes:</strong> Oscar Ger, Milton Fuel, Erik Yuquilema, Sebastian Paucar, Joyce Valencia, Diana Villa.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Imagen Derecha (Ahora es un círculo perfecto con padding para el logo) -->
+                <!-- Imagen Derecha -->
                 <div class="w-20 h-20 md:w-28 md:h-28 bg-white rounded-full shadow-2xl flex-shrink-0 border-4 border-white/30 flex items-center justify-center p-3">
                     <img src="https://lh3.googleusercontent.com/d/1ohVY5nQ64HRJoD_oXZWPnZoauONWiOBd" onerror="this.removeAttribute('crossorigin'); this.src='https://drive.google.com/uc?export=view&id=1ohVY5nQ64HRJoD_oXZWPnZoauONWiOBd'" alt="Logo UPEC" crossorigin="anonymous" class="editable-img w-full h-full object-contain">
                 </div>
@@ -219,24 +222,26 @@
 
         <!-- MINI CAMPAÑA (SOLUCIÓN) -->
         <section id="campaign-section" class="p-6 md:p-12 transition-colors duration-300" style="background-color: #eff6ff;">
-            <div class="text-center mb-8 md:mb-10">
-                <span class="editable-text bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider inline-block mb-4 shadow-md">Propuesta de Intervención</span>
-                <h2 class="editable-text text-3xl md:text-4xl font-black text-gray-900 mb-4 tracking-tight">VÍA TRANSPARENTE</h2>
-                <p class="editable-text text-lg md:text-xl text-blue-700 italic font-semibold font-serif px-4">"Tu seguridad no se negocia, tu dignidad no se compra"</p>
+            <div class="text-center mb-8 md:mb-10 flex flex-col items-center">
+                <div class="w-full flex justify-center">
+                    <span class="editable-text bg-blue-600 text-white px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider inline-block mb-4 shadow-md">Propuesta de Intervención</span>
+                </div>
+                <h2 class="editable-text text-3xl md:text-4xl font-black text-gray-900 mb-4 tracking-tight w-full">VÍA TRANSPARENTE</h2>
+                <p class="editable-text text-lg md:text-xl text-blue-700 italic font-semibold font-serif px-4 w-full">"Tu seguridad no se negocia, tu dignidad no se compra"</p>
             </div>
 
             <div class="flex flex-col md:flex-row gap-6 md:gap-8 items-center mb-10">
-                <div class="w-full md:w-1/3 rounded-2xl overflow-hidden shadow-lg border-4 border-white">
+                <div class="w-full md:w-1/3 rounded-2xl overflow-hidden shadow-lg border-4 border-white flex justify-center">
                     <!-- Imagen representativa -->
                     <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Transparencia" crossorigin="anonymous" class="editable-img w-full h-56 md:h-64 object-cover">
                 </div>
                 <div class="w-full md:w-2/3">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-100 h-full flex flex-col justify-center">
                         <h4 class="editable-text text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Público Objetivo</h4>
-                        <p class="font-medium text-base md:text-lg flex items-start md:items-center gap-3">
+                        <div class="flex items-start md:items-center gap-3">
                             <i data-lucide="target" class="text-blue-500 mt-1 md:mt-0 flex-shrink-0 editable-icon" data-icon-name="target"></i> 
-                            <span class="editable-text text-gray-800">Funcionarios de la ANT, choferes profesionales y ciudadanía en general.</span>
-                        </p>
+                            <span class="editable-text text-gray-800 font-medium text-base md:text-lg">Funcionarios de la ANT, choferes profesionales y ciudadanía en general.</span>
+                        </div>
                     </div>
                 </div>
             </div>
